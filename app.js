@@ -32,6 +32,7 @@ Promise.resolve()
 	.then(()=> {
 		if (!args.kill && !args.force && !args.zap && !args.list) args.list = true;
 		if (args.force && args.zap) throw new Error('Using --force and --zap together makes no sense');
+		if (!args.args.length) [args.args, args.surround] = [['*'], false];
 	})
 	// }}}
 	.then(()=> psList({all: args.all}))
