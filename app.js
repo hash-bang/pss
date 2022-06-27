@@ -22,6 +22,7 @@ let args = new Command()
 	.option('-w, --wait <time>', 'Wait for a valid timestring before zapping', '3s')
 	.option('-z, --zap', 'Try to politely kill a process then agressively (implies --kill)')
 	.option('--no-case', 'Disable case insesitive searching')
+	.option('--no-skip-self', 'Exclude the PSS process from the list')
 	.option('--no-surround', 'Disable adding globstars at the start and end of search strings')
 	.note('If --kill, --force, --zap and --list are omitted --list is assumed')
 	.parse(process.argv);
@@ -46,7 +47,10 @@ Promise.resolve()
 			},
 		);
 
-		return procs.filter(p => isMatch(args.name ? p.name : p.cmd));
+		return procs.filter(p =>
+			(!args.skipSelf || p.pid !== process.pid)
+			&& isMatch(args.name ? p.name : p.cmd)
+		);
 	})
 	.then(async (procs) => Promise.all(procs.map(proc => {
 		if (args.list) {
