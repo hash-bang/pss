@@ -11,7 +11,8 @@ import {stringReplaceLast} from './lib/stringReplaceLast.js';
 import timestring from 'timestring';
 
 let args = new Command()
-	.usage('[-k]')
+	.name('pss')
+	.usage('[-k | -z] [globs...]')
 	.option('-a, --all', 'Show all processes not just this users')
 	.option('-l, --list', 'Show all matching processes')
 	.option('-f, --force', 'Force kill processes (implies --kill)')
