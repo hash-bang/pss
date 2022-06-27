@@ -3,6 +3,9 @@
 import chalk from 'chalk';
 import {Command} from 'commander';
 import 'commander-extras';
+import fuzzy from 'fuzzy';
+import inquirer from 'inquirer';
+import inquirerCheckboxPlusPrompt from 'inquirer-checkbox-plus-prompt';
 import micromatch from 'micromatch';
 import {filterExistingProcesses} from 'process-exists';
 import psList from 'ps-list';
@@ -10,10 +13,13 @@ import {taskkill} from 'taskkill';
 import {stringReplaceLast} from './lib/stringReplaceLast.js';
 import timestring from 'timestring';
 
+inquirer.registerPrompt('checkbox-plus', inquirerCheckboxPlusPrompt);
+
 let args = new Command()
 	.name('pss')
 	.usage('[-k | -z] [globs...]')
 	.option('-a, --all', 'Show all processes not just this users')
+	.option('-i, --interactive', 'Ask about all found processes')
 	.option('-l, --list', 'Show all matching processes')
 	.option('-f, --force', 'Force kill processes (implies --kill)')
 	.option('-k, --kill', 'Attempt to kill found processes')
@@ -51,6 +57,24 @@ Promise.resolve()
 			(!args.skipSelf || p.pid !== process.pid)
 			&& isMatch(args.name ? p.name : p.cmd)
 		);
+	})
+	.then(procs => {
+		if (!args.interactive) return procs;
+		return inquirer.prompt([{
+			type: 'checkbox-plus',
+			name: 'procs',
+			message: 'Select processes',
+			searchable: true,
+			pageSize: 30,
+			source: (answers, input) => Promise.resolve(
+				fuzzy
+					.filter(input, procs, {
+						extract: i => i.cmd,
+					})
+					.map(i => ({name: i.original.cmd, value: i.original}))
+			),
+		}])
+			.then(({procs}) => procs)
 	})
 	.then(async (procs) => Promise.all(procs.map(proc => {
 		if (args.list) {
