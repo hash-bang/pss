@@ -1,0 +1,40 @@
+{
+  "name": "@hash-bang/pss",
+  "version": "1.0.0",
+  "description": "Simple Linux process grep and kill",
+  "main": "app.js",
+  "type": "module",
+  "engines": {
+    "node": "^12.20.0 || ^14.13.1 || >=16.0.0"
+  },
+  "bin": {
+    "pss": "./app.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hash-bang/pss.git"
+  },
+  "keywords": [
+    "ps",
+    "process",
+    "grep",
+    "kill",
+    "cli"
+  ],
+  "author": "Matt Carter <m@ttcarter.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/hash-bang/pss/issues"
+  },
+  "homepage": "https://github.com/hash-bang/pss#readme",
+  "dependencies": {
+    "chalk": "^5.0.1",
+    "commander": "^9.3.0",
+    "commander-extras": "^1.1.6",
+    "micromatch": "^4.0.5",
+    "process-exists": "^5.0.0",
+    "ps-list": "^8.1.0",
+    "taskkill": "^5.0.0",
+    "timestring": "^6.0.0"
+  }
+}
