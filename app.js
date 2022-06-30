@@ -80,10 +80,10 @@ Promise.resolve()
 	})
 	.then(async (procs) => Promise.all(procs.map(proc => {
 		if (args.list) {
-			procs.forEach(proc => console.log(
+			console.log(
 				chalk.blue.bold(proc.pid),
 				stringReplaceLast(proc.cmd, proc.name, v => chalk.bold.white(v)),
-			))
+			);
 		}
 
 		if (args.kill || args.zap) {
