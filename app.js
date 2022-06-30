@@ -8,8 +8,9 @@ import inquirer from 'inquirer';
 import inquirerCheckboxPlusPrompt from 'inquirer-checkbox-plus-prompt';
 import micromatch from 'micromatch';
 import {filterExistingProcesses} from 'process-exists';
+// import pidToPort from 'pid-port';
 import psList from 'ps-list';
-import {taskkill} from 'taskkill';
+import fkill from 'fkill';
 import {stringReplaceLast} from './lib/stringReplaceLast.js';
 import timestring from 'timestring';
 
@@ -30,6 +31,7 @@ let args = new Command()
 	.option('--no-case', 'Disable case insesitive searching')
 	.option('--no-skip-self', 'Exclude the PSS process from the list')
 	.option('--no-surround', 'Disable adding globstars at the start and end of search strings')
+	.option('--no-tree', 'Dont attempt to kill all sub-processes on --force / --zap')
 	.note('If --kill, --force, --zap and --list are omitted --list is assumed')
 	.parse(process.argv);
 
@@ -91,7 +93,7 @@ Promise.resolve()
 				stringReplaceLast(proc.cmd, proc.name, v => chalk.bold.white(v)),
 			);
 
-			return taskkill(proc.pid);
+			return fkill(proc.pid);
 		}
 	})).then(()=> procs))
 	.then(async (procs) => {
@@ -117,7 +119,7 @@ Promise.resolve()
 			stringReplaceLast(proc.cmd, proc.name, v => chalk.bold.white(v)),
 		);
 
-		return taskkill(proc.pid, {force: true});
+		return fkill(proc.pid, {force: true, tree: args.tree});
 	})))
 	.then(()=> process.exit(0))
 	.catch(e => {
