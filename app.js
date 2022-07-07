@@ -26,7 +26,7 @@ let args = new Command()
 	.option('-f, --force', 'Force kill processes (implies --kill)')
 	.option('-k, --kill', 'Attempt to kill found processes')
 	.option('-n, --name', 'Match the name of the command only instead of args')
-	.option('-p, --pid <pids...>', 'List of specific Process IDs to limit to')
+	.option('-p, --pid <pids...>', 'CSV of specific Process IDs to limit to (or specify multiple times)')
 	.option('-v, --verbose', 'Be verbose about what is happening')
 	.option('-w, --wait <time>', 'Wait for a valid timestring before zapping', '3s')
 	.option('-z, --zap', 'Try to politely kill a process then agressively (implies --kill)')
@@ -48,9 +48,6 @@ Promise.resolve()
 		if (!args.kill && !args.force && !args.zap && !args.list) args.list = true;
 		if (args.force && args.zap) throw new Error('Using --force and --zap together makes no sense');
 		if (!args.args.length) [args.args, args.surround] = [['*'], false];
-
-		// Make sure args.pid is always a set
-		args.pid = new Set(args.pid ? args.pid.split(/\s*,\s*/) : []);
 	})
 	// }}}
 	// Self sudo {{{
@@ -79,12 +76,13 @@ Promise.resolve()
 			.map(port => portToPid(port)
 				.then(pid => {
 					console.warn('Got PID', pid, 'listening on port', port);
-					args.pid.add(pid);
+					args.pid.push(pid);
 				})
 				.catch(()=> console.warn('Cannot find process listening on port', port))
 			),
 	]))
 	.then(([procs]) => {
+		// Prepare globs + glob matcher {{{
 		let globs = args.args
 			.filter(a => !a.startsWith(':') || !isFinite(a.substr(1)))
 			.map(a => args.surround ? `*${a}*` : a);
@@ -95,10 +93,32 @@ Promise.resolve()
 				nocase: args.case,
 			})
 			: ()=> true;
+		// }}}
+
+		// Make sure args.pid is always a set {{{
+		let pids = new Set(
+			(args.pid ?? [])
+				.reduce((t, v) => t.concat(v.split(/\s*,\s*/)), []) // Split up CSVs
+				.flat()
+				.map(v => +v) // Transform to number
+		);
+		// }}}
+
+		// Make a list of selfPids (this PID + parents using sudo) {{{
+		let selfPids = new Set([process.pid]);
+		// TODO: This needs to recurse if we're in sudo mode
+		// }}}
+
+		if (args.verbose) {
+			console.log('Filtering', procs.length, 'total procs...');
+			if (args.skipSelf) console.log('> filter out', selfPids.size, 'self PIDs:', Array.from(selfPids).map(pid => chalk.cyan(pid)).join(' | '));
+			if (globs.length > 0) console.log('> filter by', globs.length, 'globs:', globs.map(g => '«' + chalk.cyan(g) + '»').join(' | '));
+			if (pids.size > 0) console.log('> filter by', pids.size, 'PIDs:', Array.from(pids).map(pid => chalk.cyan(pid)).join(' | '));
+		}
 
 		return procs.filter(p =>
-			(!args.skipSelf || p.pid !== process.pid)
-			&& (!args.pid || args.pid.has(p.pid))
+			(!args.skipSelf || !selfPids.has(p.pid))
+			&& (pids.size == 0 || pids.has(p.pid))
 			&& isMatch(args.name ? p.name : p.cmd)
 		);
 	})
