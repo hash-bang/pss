@@ -8,7 +8,7 @@ import fuzzy from 'fuzzy';
 import inquirer from 'inquirer';
 import inquirerCheckboxPlusPrompt from 'inquirer-checkbox-plus-prompt';
 import micromatch from 'micromatch';
-import {filterExistingProcesses} from 'process-exists';
+import {processExists} from 'process-exists';
 import {portToPid} from 'pid-port';
 import psList from 'ps-list';
 import fkill from 'fkill';
