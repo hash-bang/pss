@@ -30,6 +30,7 @@ let args = new Command()
 	.option('-v, --verbose', 'Be verbose about what is happening')
 	.option('-w, --wait <time>', 'Wait for a valid timestring before zapping', '3s')
 	.option('-z, --zap', 'Try to politely kill a process then agressively (implies --kill)')
+	.option('--parent-pid <pid>', 'Specify the parent pid to use unless --no-skip-self (internally used when sudo-ing)')
 	.option('--no-case', 'Disable case insesitive searching')
 	.option('--no-sudo', 'Do not try to elevate this process to sudo if possible')
 	.option('--no-skip-self', 'Exclude the PSS process from the list')
@@ -58,9 +59,19 @@ Promise.resolve()
 				throw 'NEXT';
 			})
 		)
-		.then(()=> execa('sudo', process.argv, {
-			stdio: 'inherit',
-		}))
+		.then(()=> execa(
+			'sudo',
+			[
+				...process.argv,
+				...(process.argv.some(arg => arg.startsWith('--parent-pid')) // Glue --parent-pid if not already present
+					? []
+					: [`--parent-pid=${process.pid}`]
+				),
+			],
+			{
+				stdio: 'inherit',
+			},
+		))
 		.then(()=> { throw 'EXIT' })
 		.catch(e => { if (e !== 'NEXT') throw e })
 	)
@@ -104,14 +115,30 @@ Promise.resolve()
 		);
 		// }}}
 
-		// Make a list of selfPids (this PID + parents using sudo) {{{
-		let selfPids = new Set([process.pid]);
-		// TODO: This needs to recurse if we're in sudo mode
+		// Make a list of selfPids (starter PID + children via sudo) {{{
+		let selfPids = new Set();
+		if (args.skipSelf) {
+			let procChildren = procs.reduce((procMap, proc) =>
+				procMap.set(
+					proc.ppid,
+					procMap.has(proc.ppid)
+						? [...procMap.get(proc.ppid), proc]
+						: [proc]
+				)
+			, new Map());
+
+			let gatherChildren = (pid, pidSet) => {
+				pidSet.add(pid);
+				(procChildren.get(pid) ?? []).forEach(child => gatherChildren(child.pid, pidSet));
+			};
+
+			gatherChildren(+(args.parentPid || process.pid), selfPids);
+		}
 		// }}}
 
 		if (args.verbose) {
 			console.log('Filtering', procs.length, 'total procs...');
-			if (args.skipSelf) console.log('> filter out', selfPids.size, 'self PIDs:', Array.from(selfPids).map(pid => chalk.cyan(pid)).join(' | '));
+			if (args.skipSelf) console.log('> filter out', selfPids.size, 'self PIDs:', Array.from(selfPids).map(pid => chalk.cyan(pid)).join(' | '), '(from parent PID ' + (args.parentPid ? `${args.parentPid} via --parent-pid` : `${process.pid} - this proc PID`) + ')');
 			if (globs.length > 0) console.log('> filter by', globs.length, 'globs:', globs.map(g => '«' + chalk.cyan(g) + '»').join(' | '));
 			if (pids.size > 0) console.log('> filter by', pids.size, 'PIDs:', Array.from(pids).map(pid => chalk.cyan(pid)).join(' | '));
 		}
