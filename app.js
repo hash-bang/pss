@@ -76,6 +76,7 @@ Promise.resolve()
 		.catch(e => { if (e !== 'NEXT') throw e })
 	)
 	// }}}
+	// Fetch all processes {{{
 	.then(()=> Promise.all([
 		// Fetch all processes
 		psList({all: args.all}),
@@ -92,6 +93,8 @@ Promise.resolve()
 				.catch(()=> console.warn('Cannot find process listening on port', port))
 			),
 	]))
+	// }}}
+	// Filter procs {{{
 	.then(([procs]) => {
 		// Prepare globs + glob matcher {{{
 		let globs = args.args
@@ -149,6 +152,8 @@ Promise.resolve()
 			&& isMatch(args.name ? p.name : p.cmd)
 		);
 	})
+	// }}}
+	// Ask user to filter (if --interactive) {{{
 	.then(procs => {
 		if (!args.interactive) return procs;
 		return inquirer.prompt([{
@@ -167,6 +172,8 @@ Promise.resolve()
 		}])
 			.then(({procs}) => procs)
 	})
+	// }}}
+	// List or kill procs {{{
 	.then(async (procs) => Promise.all(procs.map(proc => {
 		if (args.list) {
 			console.log(
@@ -185,6 +192,8 @@ Promise.resolve()
 			return fkill(proc.pid);
 		}
 	})).then(()=> procs))
+	// }}}
+	// Wait (if --zap) {{{
 	.then(async (procs) => {
 		if (!args.zap || !args.wait) return procs;
 		let parsedWait = timestring(args.wait, 'ms');
@@ -192,6 +201,8 @@ Promise.resolve()
 		await new Promise(resolve => setTimeout(resolve, parsedWait));
 		return procs;
 	})
+	// }}}
+	// Violently kill remaining procs (if --zap) {{{
 	.then(procs => {
 		if (args.zap) { // If zapping remove processes that politely exited
 			return Promise.all(procs.map(proc => ({
@@ -210,6 +221,8 @@ Promise.resolve()
 
 		return fkill(proc.pid, {force: true, tree: args.tree});
 	})))
+	// }}}
+	// Exit / Catch {{{
 	.then(()=> process.exit(0))
 	.catch(e => {
 		if (e === 'EXIT') {
@@ -219,3 +232,4 @@ Promise.resolve()
 			process.exit(1);
 		}
 	})
+	// }}}
