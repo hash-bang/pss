@@ -196,6 +196,23 @@ Promise.resolve()
 	// Wait (if --zap) {{{
 	.then(async (procs) => {
 		if (!args.zap || !args.wait) return procs;
+
+		await Promise.all(procs.map(proc =>
+			processExists(proc.pid)
+				.then(remains => proc.remains = remains)
+		))
+
+		procs = procs.filter(proc => proc.remains); // Remove dead processes
+
+		if (procs.length == 0) throw 'EXIT'; // Nothing remains - silently exit
+
+		console.log('Processes still exist:',
+			procs
+				.map(proc => proc.pid)
+				.join(' | ')
+		);
+
+
 		let parsedWait = timestring(args.wait, 'ms');
 		console.log('Waiting', args.wait, chalk.gray(`(${parsedWait}ms)`));
 		await new Promise(resolve => setTimeout(resolve, parsedWait));
