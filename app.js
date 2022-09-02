@@ -177,8 +177,8 @@ Promise.resolve()
 	.then(async (procs) => Promise.all(procs.map(proc => {
 		if (args.list) {
 			console.log(
-				chalk.blue.bold(proc.pid),
-				stringReplaceLast(proc.cmd, proc.name, v => chalk.bold.white(v)),
+				chalk.bold.blue(proc.pid),
+				stringReplaceLast(proc.cmd, proc.name, v => chalk.bold.cyan(v)),
 			);
 		}
 
