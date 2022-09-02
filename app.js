@@ -236,7 +236,11 @@ Promise.resolve()
 			stringReplaceLast(proc.cmd, proc.name, v => chalk.bold.white(v)),
 		);
 
-		return fkill(proc.pid, {force: true, tree: args.tree});
+		return fkill(proc.pid, {force: true, tree: args.tree})
+			.catch(e => {
+				if (/Process doesn't exist/.test(e.toString())) return; // Silent dispose of processes that died politely or during the wait
+				throw e;
+			})
 	})))
 	// }}}
 	// Exit / Catch {{{
