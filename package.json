@@ -22,13 +22,17 @@
     "cli"
   ],
   "author": "Matt Carter <m@ttcarter.com>",
+  "imports": {
+    "#lib/*": "./lib/*.js"
+  },
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/hash-bang/pss/issues"
   },
   "homepage": "https://github.com/hash-bang/pss#readme",
   "dependencies": {
-    "chalk": "^5.0.1",
+    "chalk": "^5.2.0",
+    "cli-truncate": "^3.1.0",
     "commander": "^9.3.0",
     "commander-extras": "^1.1.6",
     "execa": "^6.1.0",

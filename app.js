@@ -12,7 +12,8 @@ import {processExists} from 'process-exists';
 import {portToPid} from 'pid-port';
 import psList from 'ps-list';
 import fkill from 'fkill';
-import {stringReplaceLast} from './lib/stringReplaceLast.js';
+import {stringReplaceLast} from '#lib/stringReplaceLast';
+import truncate from 'cli-truncate';
 import timestring from 'timestring';
 
 inquirer.registerPrompt('checkbox-plus', inquirerCheckboxPlusPrompt);
@@ -34,6 +35,7 @@ let args = new Command()
 	.option('--no-case', 'Disable case insesitive searching')
 	.option('--no-sudo', 'Do not try to elevate this process to sudo if possible')
 	.option('--no-skip-self', 'Exclude the PSS process from the list')
+	.option('--no-truncate', 'Do not truncate items so that only one listing appears on a line')
 	.option('--no-surround', 'Disable adding globstars at the start and end of search strings')
 	.option('--no-tree', 'Dont attempt to kill all sub-processes on --force / --zap')
 	.note('Globs can be any valid string, if the string is numeric and begins with `:` its assumed to be a port e.g. `:80` fetches the process listening on port 80')
@@ -176,9 +178,15 @@ Promise.resolve()
 	// List or kill procs {{{
 	.then(async (procs) => Promise.all(procs.map(proc => {
 		if (args.list) {
+			let line = chalk.bold.blue(proc.pid) + ' ' + stringReplaceLast(proc.cmd, proc.name, v => chalk.bold.cyan(v));
+
 			console.log(
-				chalk.bold.blue(proc.pid),
-				stringReplaceLast(proc.cmd, proc.name, v => chalk.bold.cyan(v)),
+				args.truncate
+					? truncate(line, process.stdout.columns, {
+						space: true,
+						truncationCharacter: chalk.blue('…'),
+					})
+					: line
 			);
 		}
 

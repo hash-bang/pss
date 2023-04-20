@@ -27,9 +27,13 @@ Options:
                        "3s")
   -z, --zap            Try to politely kill a process then agressively (implies
                        --kill)
+  --parent-pid <pid>   Specify the parent pid to use unless --no-skip-self
+                       (internally used when sudo-ing)
   --no-case            Disable case insesitive searching
   --no-sudo            Do not try to elevate this process to sudo if possible
   --no-skip-self       Exclude the PSS process from the list
+  --no-truncate        Do not truncate items so that only one listing appears
+                       on a line
   --no-surround        Disable adding globstars at the start and end of search
                        strings
   --no-tree            Dont attempt to kill all sub-processes on --force /
