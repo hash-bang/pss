@@ -1,6 +1,6 @@
 {
   "name": "@hash-bang/pss",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Simple Linux process grep and kill",
   "main": "app.js",
   "type": "module",
